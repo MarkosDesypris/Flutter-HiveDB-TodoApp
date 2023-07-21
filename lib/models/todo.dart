@@ -1,19 +1,16 @@
-class ToDo {
-  String id;
+import 'package:hive/hive.dart';
+
+part 'todo.g.dart';
+
+@HiveType(typeId: 1)
+class ToDo extends HiveObject {
+  @HiveField(0)
   String todoText;
+  @HiveField(1)
   bool isDone;
 
   ToDo({
-    required this.id,
     required this.todoText,
     this.isDone = false,
   });
-
-  static List<ToDo> todoList() {
-    return [
-      ToDo(id: '01', todoText: 'Go to Gym', isDone: true),
-      ToDo(id: '02', todoText: 'Check the Emails'),
-      ToDo(id: '03', todoText: 'Prepare lunch box'),
-    ];
-  }
 }

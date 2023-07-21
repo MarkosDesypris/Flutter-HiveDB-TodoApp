@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:todo_app/models/todo.dart';
 import 'package:todo_app/widgets/todo_tile.dart';
 import '../constats/colors.dart';
@@ -15,30 +16,34 @@ class _HomeState extends State<Home> {
   final _todoController = TextEditingController();
   final _searchController = TextEditingController();
 
-  // Initialize the List
-  final List<ToDo> todoList = ToDo.todoList();
-  List<ToDo> _foundTodo = [];
+  // Reference the Hive DB
+  final _todosBox = Hive.box('ToDos');
+  late List<dynamic> _todos;
 
   @override
   void initState() {
     super.initState();
-    _foundTodo = todoList;
+    _todos = _getTodos();
   }
 
   @override
   void dispose() {
     super.dispose();
     _todoController.dispose();
+    _searchController.dispose();
   }
 
-  void _addToDoItem(String text) {
+  List<dynamic> _getTodos() {
+    final todosList = _todosBox.values.toList();
+    return todosList;
+  }
+
+  Future<void> _addToDoItem(ToDo todo) async {
     // A Easy Way when you have text in the searchbar, you can add a new todo.
     _searchController.clear();
-    _runFilter();
 
-    setState(() {
-      todoList.add(ToDo(id: todoList.length.toString(), todoText: text));
-    });
+    await _todosBox.add(todo);
+    setState(() => _todos = _getTodos());
     _todoController.clear();
   }
 
@@ -48,25 +53,29 @@ class _HomeState extends State<Home> {
     });
   }
 
-  void _deleteToDoItem(String id) {
-    setState(() {
-      todoList.removeWhere((todo) => todo.id == id);
-    });
+  void _deleteToDoItem(dynamic key) async {
+    await _todosBox.delete(key);
+    setState(() => _todos = _getTodos());
   }
 
   void _runFilter([String keyword = '']) {
-    List<ToDo> result = [];
+    List<dynamic> result = [];
     if (keyword.isEmpty) {
-      result = todoList;
+      result = _getTodos();
     } else {
-      result = todoList
-          .where((todo) =>
-              todo.todoText.toLowerCase().contains(keyword.toLowerCase()))
+      result = _getTodos()
+          .where(
+            (todo) => todo.todoText.toLowerCase().contains(
+                  keyword.toLowerCase(),
+                ),
+          )
           .toList();
     }
-    setState(() {
-      _foundTodo = result;
-    });
+    setState(
+      () {
+        _todos = result;
+      },
+    );
   }
 
   @override
@@ -76,9 +85,9 @@ class _HomeState extends State<Home> {
       appBar: AppBar(
         elevation: 0.0,
         backgroundColor: tdBGColor,
-        title: Row(
+        title: const Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: const [
+          children: [
             Icon(
               Icons.menu,
               color: tdBlack,
@@ -124,27 +133,36 @@ class _HomeState extends State<Home> {
                         hintStyle: TextStyle(color: tdGrey),
                       )),
                 ),
-                Expanded(
-                  child: ListView(
+                const Padding(
+                  padding: EdgeInsets.only(
+                    top: 20,
+                    bottom: 20,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Container(
-                        margin: const EdgeInsets.only(top: 30.0, bottom: 30.0),
-                        child: const Text(
-                          'All ToDos',
-                          style: TextStyle(
-                            fontSize: 30.0,
-                            fontWeight: FontWeight.w500,
-                          ),
+                      Text(
+                        'Things To Do',
+                        style: TextStyle(
+                          fontSize: 30.0,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                      for (ToDo todo in _foundTodo.reversed)
-                        TodoItem(
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: ListView.builder(
+                      itemCount: _todos.length,
+                      itemBuilder: (context, index) {
+                        final todo = _todos[index];
+
+                        return TodoItem(
                           todo: todo,
                           onToDoChange: _handleToDoChange,
                           onDeleteItem: _deleteToDoItem,
-                        ),
-                    ],
-                  ),
+                        );
+                      }),
                 )
               ],
             ),
@@ -189,7 +207,9 @@ class _HomeState extends State<Home> {
                     right: 20,
                   ),
                   child: ElevatedButton(
-                    onPressed: () => _addToDoItem(_todoController.text),
+                    onPressed: () async => await _addToDoItem(
+                      ToDo(todoText: _todoController.text),
+                    ),
                     style: ElevatedButton.styleFrom(
                         backgroundColor: tdBlue,
                         minimumSize: const Size(50, 50),
