@@ -1,16 +1,10 @@
-# todo_app
+# ToDo App
 
-A new Flutter project.
+A Simple ToDo App using Flutter and HiveDB for local storage
 
-## Getting Started
+## Screenshots
+### Home
 
-This project is a starting point for a Flutter application.
+<img src="Image1.png" width="400" height="900">
 
-A few resources to get you started if this is your first Flutter project:
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
